@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shanglike.im.mapper.ImPushMessageMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.shanglike.im.vo.ImPushMessageVo">
+        <id column="id" property="id"/>
+        <result column="receive_user_id" property="receiveUserId"/>
+        <result column="send_user_id" property="sendUserId"/>
+        <result column="push_start_time" property="pushStartTime"/>
+        <result column="push_end_time" property="pushEndTime"/>
+        <result column="state" property="state"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
+        <result column="msg_type" property="msgType"/>
+        <result column="content_type" property="contentType"/>
+        <result column="chat_visible" property="chatVisible"/>
+        <result column="content_text" property="contentText"/>
+        <result column="create_time_timestamp" property="createTimeTimestamp"/>
+        <result column="retracted" property="retracted"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, receive_user_id AS receiveUserId, push_start_time AS pushStartTime, push_end_time AS pushEndTime, state, create_by AS createBy, create_time AS createTime, update_by AS updateBy, update_time AS updateTime, deleted, version
+    </sql>
+
+    <update id="updateImMessageState" parameterType="java.lang.Long">
+      update im_push_message set state = 1 where receive_user_id = #{userId}
+
+    </update>
+
+    <update id="updateReceiveHistory" parameterType="com.shanglike.im.vo.ImPushMessageDeleteVo">
+       update im_push_message set receive_visible = 0 where receive_user_id = #{receiveUserId}
+            and send_user_id = #{sendUserId}
+
+    </update>
+    <update id="updateSendHistory" parameterType="com.shanglike.im.vo.ImPushMessageDeleteVo">
+       update im_push_message set send_visible = 0 where receive_user_id = #{sendUserId}
+            and send_user_id = #{receiveUserId}
+    </update>
+    <update id="updateReceiveMessage" parameterType="com.shanglike.im.vo.ImPushMessageDeleteVo">
+        update im_push_message set receive_visible = 0 where receive_user_id = #{receiveUserId}
+        and send_user_id = #{sendUserId} and id in
+        <foreach collection="messageIds" item="tempId" open="(" separator="," close=")">
+            #{tempId}
+        </foreach>
+    </update>
+    <update id="updateSendMessage" parameterType="com.shanglike.im.vo.ImPushMessageDeleteVo">
+        update im_push_message set send_visible = 0 where receive_user_id = #{sendUserId}
+        and send_user_id = #{receiveUserId} and id in
+        <foreach collection="messageIds" item="tempId" open="(" separator="," close=")">
+            #{tempId}
+        </foreach>
+    </update>
+    <select id="findNoPushMessageList" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        ( SELECT id, send_user_id, receive_user_id, content as content_text, state, msg_type,content_type,
+        chat_visible,create_time_timestamp,retracted FROM
+        im_push_message
+        <where>
+            <if test="userId != null">
+                and receive_user_id = #{userId}
+            </if>
+            and state = 0
+            and push_start_time is null
+            and push_end_time is null
+        </where>
+        )
+        union all
+        ( SELECT id,send_user_id, receive_user_id, content as content_text, state ,msg_type,content_type,
+        chat_visible,create_time_timestamp,retracted FROM
+        im_push_message
+        <where>
+            <if test="userId != null">
+                and receive_user_id = #{userId}
+            </if>
+            and state = 0
+            and push_start_time &lt;= now()
+            and push_end_time &gt;= now()
+        </where>
+        )
+
+    </select>
+    <select id="messageHistory" parameterType="com.shanglike.im.vo.ImPushMessageQueryVo" resultMap="BaseResultMap">
+        SELECT id, send_user_id,receive_user_id, content as content_text, state, msg_type,content_type,
+        chat_visible,create_time_timestamp,retracted FROM
+        im_push_message
+        <where>
+            ((receive_user_id = #{receiveUserId}
+            and send_user_id = #{sendUserId} and receive_visible = 1 ) or
+            ( send_user_id = #{receiveUserId}
+            and receive_user_id = #{sendUserId} and send_visible = 1))
+            and chat_visible = 1
+            and deleted = 0
+            <if test="messageId != null">
+                and id &lt; #{messageId}
+            </if>
+            <if test="endTime != null">
+                and create_time_timestamp &lt; #{endTime}
+            </if>
+        </where>
+        order by id desc limit #{count}
+    </select>
+
+
+    <insert id="batchAddPushMessage">
+        insert into im_push_message
+        (send_user_id,receive_user_id,content,push_start_time,push_end_time,state,create_by,create_time,msg_type,content_type,
+        chat_visible,create_time_timestamp,retracted )values
+        <foreach
+                collection="list" item="tempImMessage" separator=",">
+            (#{tempImMessage.sendUserId},#{tempImMessage.receiveUserId},#{tempImMessage.content},#{tempImMessage.pushStartTime},#{tempImMessage.pushEndTime},#{tempImMessage.state},#{tempImMessage.createBy},#{tempImMessage.createTime},#{tempImMessage.msgType},#{tempImMessage.contentType},#{tempImMessage.chatVisible},#{tempImMessage.createTimeTimestamp},#{tempImMessage.retracted})
+        </foreach>
+
+    </insert>
+
+</mapper>

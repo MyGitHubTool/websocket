@@ -1,0 +1,116 @@
+app:
+  id: BND-IM
+apollo:
+  bootstrap:
+    enabled: true
+    namespaces: application
+    eagerLoad.enabled: true
+#  meta: http://192.168.13.182:8080
+spring:
+  profiles:
+    active: ${profiles}
+  application:
+    name: ${app.id}
+  mvc:
+    view:
+      suffix: .html
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+  #redis的配置
+  redis:
+    host: ${redis.host}
+    port: ${redis.port}
+    database: ${redis.database}
+    password: ${redis.password}
+    timeout: ${redis.timeout}
+    lettuce:
+      pool:
+        max-active: ${redis.lettuce.pool.max-active}
+        max-wait: ${redis.lettuce.pool.max-wait}
+        max-idle: ${redis.lettuce.pool.max-idle}
+        min-idle: ${redis.lettuce.pool.min-idle}
+
+  #配置数据库
+  datasource:
+    druid:
+      db-type: mysql
+      username: ${db.username}
+      password: ${db.password}
+      url: ${db.url}
+      connection-properties: ${db.conneProps}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      initialSize: ${db.initialSize}
+      minIdle: ${db.minIdle}
+      maxActive: ${db.maxActive}
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-return: true
+      filter.config.enabled: ${druid.filter.config.enabled}
+      filters: ${druid.filters}
+      web-stat-filter:
+        enabled: ${druid.web-stat-filter.enabled}
+        profile-enable: ${druid.web-stat-filter.profile-enable}
+        url-pattern: ${druid.web-stat-filter.url-pattern}
+        exclusions: ${druid.web-stat-filter.exclusions}
+      stat-view-servlet:
+        enabled: ${druid.stat-view-servlet.enabled}
+        url-pattern: ${druid.stat-view-servlet.url-pattern}
+        allow: ${druid.stat-view-servlet.allow }
+        reset-enable: ${druid.stat-view-servlet.reset-enable}
+        login-username: ${druid.stat-view-servlet.login-username}
+        login-password: ${druid.stat-view-servlet.login-password}
+  #配置rabbitMq
+  rabbitmq:
+    host: ${rabbitmq.host}
+    port: ${rabbitmq.port}
+    username: ${rabbitmq.username}
+    password: ${rabbitmq.password}
+#配置mybatis
+mybatis-plus:
+  mapper-locations: classpath:/mapper/**/*Mapper.xml
+  type-aliases-package: com.shanglike.im.entity
+  type-enums-package: com.shanglike.im.enums
+  global-config:
+    db-config:
+      id-type: ID_WORKER
+      db-type: MYSQL
+      field-strategy: NOT_NULL
+      table-underline: true
+      logic-delete-value: 0
+      logic-not-delete-value: 1
+    sql-parser-cache: true
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    jdbc-type-for-null: NULL
+  # REDIS
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${registryAddr}
+  instance:
+    prefer-ip-address: true
+management:
+  endpoint:
+    health:
+      show-details: always #可展示健康指标详情
+  endpoints:
+    web:
+      exposure:
+        include:  '*' #可根据业务场景修改暴露指标
+#  metrics:
+#    tags:
+#      application: ${spring.application.name}
+
+
+
+server:
+  port: ${serverPort}
+  netty:
+    port: ${serverNettyPort}
+
+
+
+
